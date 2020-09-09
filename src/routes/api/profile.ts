@@ -1,11 +1,11 @@
-import { Router, Response } from "express";
-import { check, validationResult } from "express-validator/check";
-import HttpStatusCodes from "http-status-codes";
-
-import auth from "../../middleware/auth";
 import Profile, { IProfile } from "../../models/Profile";
-import Request from "../../types/Request";
+import { Response, Router } from "express";
 import User, { IUser } from "../../models/User";
+import { check, validationResult } from "express-validator/check";
+
+import HttpStatusCodes from "http-status-codes";
+import Request from "../../types/Request";
+import auth from "../../middleware/auth";
 
 const router: Router = Router();
 

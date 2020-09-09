@@ -1,16 +1,36 @@
-import bcrypt from "bcryptjs";
-import config from "config";
-import { Router, Response } from "express";
+import { Response, Router } from "express";
+import User, { IUser } from "../../models/User";
 import { check, validationResult } from "express-validator/check";
-import gravatar from "gravatar";
-import HttpStatusCodes from "http-status-codes";
-import jwt from "jsonwebtoken";
 
+import HttpStatusCodes from "http-status-codes";
 import Payload from "../../types/Payload";
 import Request from "../../types/Request";
-import User, { IUser } from "../../models/User";
+import bcrypt from "bcryptjs";
+import config from "config";
+import gravatar from "gravatar";
+import jwt from "jsonwebtoken";
 
 const router: Router = Router();
+
+router.get("/", async (req: Request, res: Response) => {
+  try {
+    const users: IUser[] = await User.find({}); //.populate("user", ["email"]);
+    if (!users) {
+      return res.status(HttpStatusCodes.BAD_REQUEST).json({
+        errors: [
+          {
+            msg: "Error daw malay ko",
+          },
+        ],
+      });
+    }
+
+    res.json(users);
+  } catch (err) {
+    console.error(err.message);
+    res.status(HttpStatusCodes.INTERNAL_SERVER_ERROR).send("Server Error");
+  }
+});
 
 // @route   POST api/user
 // @desc    Register user given their email and password, returns the token upon successful registration
@@ -22,7 +42,7 @@ router.post(
     check(
       "password",
       "Please enter a password with 6 or more characters"
-    ).isLength({ min: 6 })
+    ).isLength({ min: 6 }),
   ],
   async (req: Request, res: Response) => {
     const errors = validationResult(req);
@@ -36,20 +56,21 @@ router.post(
     try {
       let user: IUser = await User.findOne({ email });
 
+      console.log(user);
       if (user) {
         return res.status(HttpStatusCodes.BAD_REQUEST).json({
           errors: [
             {
-              msg: "User already exists"
-            }
-          ]
+              msg: "User already exists",
+            },
+          ],
         });
       }
 
       const options: gravatar.Options = {
         s: "200",
         r: "pg",
-        d: "mm"
+        d: "mm",
       };
 
       const avatar = gravatar.url(email, options);
@@ -61,7 +82,7 @@ router.post(
       const userFields = {
         email,
         password: hashed,
-        avatar
+        avatar,
       };
 
       user = new User(userFields);
@@ -69,7 +90,7 @@ router.post(
       await user.save();
 
       const payload: Payload = {
-        userId: user.id
+        userId: user.id,
       };
 
       jwt.sign(
